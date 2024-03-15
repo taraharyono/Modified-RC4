@@ -41,6 +41,51 @@ export function RC4(plaintext, key) {
     return ciphertext;
 }
 
+export function RC4File(file, key) {
+    let sbox = [];
+    for (let i = 0; i < 256; i++) {
+        sbox[i] = i;
+    }
+
+    // Key-Scheduling Algorithm (KSA)
+    let j = 0;
+    for (let i = 0; i < 256; i++) {
+        j = (j + sbox[i] + key.charCodeAt(i % key.length)) % 256;
+        
+        // Menggabungkan dengan konsep vigenere (sbox[i] ditambahkan dengan key)
+        let keyChar = key.charCodeAt(i % key.length);
+        sbox[i] = (sbox[i] + keyChar);
+
+        // Pertukarkan nilai sbox[i] dan sbox[j]
+        let temp = sbox[i];
+        sbox[i] = sbox[j];
+        sbox[j] = temp;
+    }
+
+    let i = 0;
+    let l = 0;
+    let encryptedFile = new Uint8Array(file.length)
+    for (let k = 0; k < file.length; k++) {
+        i = (i + 1) % 256;
+        l = (l + sbox[i]) % 256;
+
+        // Pertukarkan nilai sbox[i] dan sbox[l]
+        let temp = sbox[i];
+        sbox[i] = sbox[l];
+        sbox[l] = temp;
+        
+        // Generate byte ke-k dari aliran
+        let t = (sbox[i] + sbox[l]) % 256;
+        let keystreamByte = sbox[t];
+        
+        let plainCharCode = file[i];
+        let encryptedByte = plainCharCode ^ keystreamByte;
+        encryptedFile[i] = encryptedByte
+    }
+
+    return encryptedFile
+}
+
 // Contoh penggunaan
 let key = "wiu";
 let plaintext = "hilmibaskara";

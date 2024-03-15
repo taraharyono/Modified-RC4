@@ -2,15 +2,17 @@ import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, TextInput, Button, TouchableOpacity, Platform } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import { RC4 } from './rc4modified';
+import * as FileSystem from 'expo-file-system';
+import { RC4, RC4File } from './rc4modified';
 
 export default function App() {
   const [inputType, setInputType] = useState('text'); // 'text' or 'file'
   const [text, setText] = useState('');
   const [fileUri, setFileUri] = useState(null);
-  const [mode, setMode] = useState('encrypt'); // 'encrypt' or 'decrypt'
   const [key, setKey] = useState('');
   const [outputText, setOutputText] = useState('');
+  const [encryptedFile, setEncryptedFile] = useState(null);
+  const [fileName, setFileName] = useState('');
 
   const handleTextChange = (value) => {
     setText(value);
@@ -27,13 +29,21 @@ export default function App() {
     }
   };
 
-  const handleEncrypt = () => {
+  const handleEncrypt = async () => {
     // Logic to perform encryption based on 'text' or 'fileUri'
     if (inputType === 'text') {
       const encryptedText = RC4(text, key);
       setOutputText(encryptedText);
-    console.log('Encrypting...');
+    } else if (inputType === 'file') {
+      try {
+        const fileContent = await FileSystem.readAsStringAsync(fileUri, { encoding: FileSystem.EncodingType.Base64 });
+        const encryptedFileData = RC4File(fileContent, key);
+        setEncryptedFile(encryptedFileData);
+      } catch (error) {
+        console.log('Error reading file:', error);
+      }
     }
+    console.log('Encrypting...');
   };
 
   const handleDecrypt = () => {
@@ -42,6 +52,28 @@ export default function App() {
       const decryptedText = RC4(text, key);
       setOutputText(decryptedText);
     console.log('Decrypting...');
+    }
+  };
+
+  const handleDownload = async () => {
+    try {
+      const fileExtension = fileUri.split('.').pop();
+      const encryptedFileName = `${fileUri.split('.')[0]}_encrypted.${fileExtension}`;
+      console.log(encryptedFileName);
+      
+      // Create directory for saving the encrypted file
+      const directory = `${FileSystem.documentDirectory}encrypted_files/`;
+      await FileSystem.makeDirectoryAsync(directory, { intermediates: true });
+      
+      // Write encrypted file to the directory
+      const encryptedFilePath = `${directory}${encryptedFileName}`;
+      await FileSystem.writeAsStringAsync(encryptedFilePath, encryptedFile.toString(), { encoding: FileSystem.EncodingType.Base64 });
+      console.log(encryptedFilePath);
+
+      // Open file for download
+      await FileSystem.downloadAsync(encryptedFilePath, FileSystem.documentDirectory + encryptedFileName);
+    } catch (error) {
+      console.log('Error downloading encrypted file:', error);
     }
   };
 
@@ -85,6 +117,9 @@ export default function App() {
           multiline={true}
           editable={false}
         />
+      )}
+      {encryptedFile && (
+        <Button title="Download Encrypted File" onPress={handleDownload} />
       )}
       <StatusBar style="auto" />
     </View>
