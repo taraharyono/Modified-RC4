@@ -24,6 +24,7 @@ export default function App() {
       if (result.type === 'success') {
         setFileUri(result.uri);
       }
+      console.log(result.type);
     } catch (error) {
       console.log('Error picking file:', error);
     }
@@ -36,8 +37,9 @@ export default function App() {
       setOutputText(encryptedText);
     } else if (inputType === 'file') {
       try {
-        const fileContent = await FileSystem.readAsStringAsync(fileUri, { encoding: FileSystem.EncodingType.Base64 });
-        const encryptedFileData = RC4File(fileContent, key);
+        //const fileContent = await FileSystem.readAsStringAsync(fileUri, { encoding: FileSystem.EncodingType.Base64 });
+        //console.log(fileContent);
+        const encryptedFileData = RC4File(fileUri, key);
         setEncryptedFile(encryptedFileData);
       } catch (error) {
         console.log('Error reading file:', error);
