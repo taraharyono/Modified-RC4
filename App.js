@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, TextInput, Button, TouchableOpacity, Platform } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
+import { RC4 } from './rc4modified';
 
 export default function App() {
   const [inputType, setInputType] = useState('text'); // 'text' or 'file'
   const [text, setText] = useState('');
   const [fileUri, setFileUri] = useState(null);
   const [mode, setMode] = useState('encrypt'); // 'encrypt' or 'decrypt'
+  const [key, setKey] = useState('');
+  const [outputText, setOutputText] = useState('');
 
   const handleTextChange = (value) => {
     setText(value);
@@ -26,12 +29,20 @@ export default function App() {
 
   const handleEncrypt = () => {
     // Logic to perform encryption based on 'text' or 'fileUri'
+    if (inputType === 'text') {
+      const encryptedText = RC4(text, key);
+      setOutputText(encryptedText);
     console.log('Encrypting...');
+    }
   };
 
   const handleDecrypt = () => {
     // Logic to perform decryption based on 'text' or 'fileUri'
+    if (inputType === 'text') {
+      const decryptedText = RC4(text, key);
+      setOutputText(decryptedText);
     console.log('Decrypting...');
+    }
   };
 
   return (
@@ -55,10 +66,26 @@ export default function App() {
       ) : (
         <Button title="Choose File" onPress={handleFilePick} />
       )}
+      <TextInput
+        style={styles.input}
+        onChangeText={setKey}
+        value={key}
+        placeholder="Enter encryption key..."
+        secureTextEntry={false}
+      />
       <View style={styles.modeContainer}>
         <Button title="Encrypt" onPress={handleEncrypt} />
         <Button title="Decrypt" onPress={handleDecrypt} />
       </View>
+      {inputType === 'text' && (
+        <TextInput
+          style={[styles.input, styles.output]}
+          value={outputText}
+          placeholder="Output"
+          multiline={true}
+          editable={false}
+        />
+      )}
       <StatusBar style="auto" />
     </View>
   );
